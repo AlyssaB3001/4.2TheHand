@@ -16,6 +16,7 @@ app.use(cors());
 app.use(express.json());
  
 let port;
+let potenValue = 0;
  
 try {
   port = new SerialPort({
@@ -28,7 +29,20 @@ try {
   });
  
   port.on('data', (data) => {
-    console.log('Arduino:', data.toString());
+    
+  const line = data.toString().trim(); // ✅ DEFINE line
+
+  console.log('Arduino:', line);
+
+    
+    //Get value from potentiometer
+    if (/^\d+$/.test(line)) {
+      potenValue = Number(line);
+      console.log('Pot:', potenValue);
+      return;
+  }
+
+
   });
  
   port.on('error', (err) => {
@@ -81,7 +95,8 @@ app.post('/hand', (req, res) => {
  
     res.json({
       ok: true,
-      sent: line.trim()
+      sent: line.trim(),
+      poten: potenValue
     });
   });
 });

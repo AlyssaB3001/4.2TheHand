@@ -234,6 +234,13 @@ async function sendHandToArduino() {
       potenValue = result.poten;   
     }
 
+    
+    if (result.poten !== undefined) {
+      potenValue = result.poten;
+      console.log('POT VALUE:', potenValue);
+    }
+
+
   } catch (error) {
     console.error('Error sending to Arduino:', error);
   }
@@ -381,6 +388,12 @@ function buildUI() {
 buildUI();
 
 // =========================================
+// Potentiometer Reading Fix
+// =========================================
+
+setInterval(sendHandToArduino, 100);
+
+// =========================================
 // Load Model
 // =========================================
 const loader = new GLTFLoader();
@@ -428,11 +441,13 @@ window.addEventListener('resize', () => {
 function animate() {
   requestAnimationFrame(animate);
 
+  console.log('potenValue:', potenValue);
+
   //Smoothe the color to make it better
   smootheColor = THREE.MathUtils.lerp(smootheColor, potenValue, 0.1);
 
   //Apply Color
-  const color = getHandColorFromSensor(potenValue);
+  const color = getHandColorFromSensor(smootheColor);
   setHandColor(color);
 
   controls.update();
