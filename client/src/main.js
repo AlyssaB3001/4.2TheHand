@@ -59,6 +59,8 @@ scene.add(new THREE.AxesHelper(2));
 // Global state
 // =========================================
 let handModel = null;
+let potenValue = 0;
+let smootheColor = 0;
 
 const state = {
   thumb: 0,
@@ -102,6 +104,48 @@ const fingerSigns = {
 };
 
 const sliderRefs = {};
+
+// =========================================
+// Colorful
+// =========================================
+
+function getHandColorFromSensor(sensorValue) {
+  let t = THREE.MathUtils.mapLinear(sensorValue, 0, 1023, 0, 1);
+
+  const white  = new THREE.Color(1, 1, 1);
+  const purple = new THREE.Color(0.5, 0, 0.5);
+  const blue   = new THREE.Color(0, 0, 1);
+  const black  = new THREE.Color(0, 0, 0);
+
+  // White -> Purple
+  if (t < 0.33) {
+    let tt = THREE.MathUtils.mapLinear(t, 0, 0.33, 0, 1);
+    return white.clone().lerp(purple, tt);
+  }
+  //Purple -> Blue
+  if (t < 0.66) {
+    let tt = THREE.MathUtils.mapLinear(t, 0.33, 0.66, 0, 1);
+    return purple.clone().lerp(blue, tt);
+  }
+  //Blue -> Black
+  let tt = THREE.MathUtils.mapLinear(t, 0.66, 1, 0, 1);
+  return blue.clone().lerp(black, tt);
+}
+
+// =========================================
+// Apply Color 
+// =========================================
+
+function setHandColor(color) {
+  if (!handModel) return;
+
+  handModel.traverse((child) => {
+    if (child.isMesh && child.material) {
+      child.material.color.copy(color);
+      child.material.needsUpdate = true;
+    }
+  });
+}
 
 // =========================================
 // Helpers
@@ -184,6 +228,12 @@ async function sendHandToArduino() {
 
     const result = await response.json();
     console.log('Server response:', result);
+
+    //Potentiometer
+    if (result.poten !== undefined) {
+      potenValue = result.poten;   
+    }
+
   } catch (error) {
     console.error('Error sending to Arduino:', error);
   }
@@ -377,6 +427,14 @@ window.addEventListener('resize', () => {
 // =========================================
 function animate() {
   requestAnimationFrame(animate);
+
+  //Smoothe the color to make it better
+  smootheColor = THREE.MathUtils.lerp(smootheColor, potenValue, 0.1);
+
+  //Apply Color
+  const color = getHandColorFromSensor(potenValue);
+  setHandColor(color);
+
   controls.update();
   renderer.render(scene, camera);
 }
