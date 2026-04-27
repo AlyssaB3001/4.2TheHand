@@ -30,7 +30,7 @@ try {
  
   port.on('data', (data) => {
     
-  const line = data.toString().trim(); // ✅ DEFINE line
+  const line = data.toString().trim(); 
 
   console.log('Arduino:', line);
 
